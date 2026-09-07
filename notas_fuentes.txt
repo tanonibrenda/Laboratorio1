@@ -1,0 +1,39 @@
+1. analytics sales de IBM
+    https://www.ibm.com/mx-es/think/topics/sales-analytics
+
+
+2. Global
+    https://docs.python.org/es/3/library/glob.html
+
+3. Pandas
+    https://pandas.pydata.org/docs/ 
+4. OS
+    https://docs.python.org/es/3/library/os.html
+
+
+5. analytics sales de Microsoft
+    https://learn.microsoft.com/es-es/dynamics365/business-central/sales-analytics-overview
+6. Pasos para analisis de ventas
+    https://leadsales.io/blog/como-medir-ventas-empresa/
+
+7. Feature Engineering
+    https://www.obsbusiness.school/blog/feature-engineering-que-es-tecnicas-y-ejemplos-en-machine-learning
+
+8. Analisis Exploratorio de datos
+    https://www.youtube.com/watch?v=_-KW4gT_oGU
+
+9. Poblacion por Ciudades
+
+'Atlanta' 530000,
+ 'Austin' 1000000,
+ 'Boston' 675000,
+ 'Dallas' 1300000,
+ 'Los Angeles' 3980000,
+ 'New York City' 8260000,
+ 'Portland' 652503,
+ 'San Francisco' 827526,
+ 'Seattle' 781000
+
+
+ 10. Colores
+ https://es.matplotlib.net/stable/gallery/color/named_colors.html
