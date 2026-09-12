@@ -37,3 +37,8 @@
 
  10. Colores
  https://es.matplotlib.net/stable/gallery/color/named_colors.html
+
+
+ Preguntas:
+ 1 ✅ en meses
+ 
