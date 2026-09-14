@@ -1,0 +1,882 @@
+1. Introducción
+# Laboratorio 1 - Análisis de ventas
+
+## Introducción
+
+En este laboratorio se realizará un análisis exploratorio de un conjunto de datos
+correspondiente a ventas de productos realizadas durante los distintos meses del año.
+
+El objetivo principal es identificar patrones de comportamiento en las ventas,
+analizar la evolución de los ingresos, determinar los productos y ciudades con
+mayor participación y estudiar posibles relaciones entre las ventas, el momento
+del día, los días de la semana y la población de las ciudades.
+
+Para realizar el análisis se utilizarán las librerías Pandas y NumPy para la
+manipulación y procesamiento de los datos, y Matplotlib y Seaborn para la
+visualización de los resultados.
+
+Además, se incorporará información de población por ciudad mediante un proceso
+de combinación (merge) con los datos originales. Esto permitirá complementar el
+análisis de ventas con indicadores relativos a la cantidad de habitantes de cada
+ciudad.
+2. Importación de librerías
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+import glob
+import re
+from itertools import combinations
+
+# Configuración visual
+sns.set_theme(style="whitegrid")
+
+plt.rcParams["figure.figsize"] = (10, 6)
+plt.rcParams["axes.titlesize"] = 14
+plt.rcParams["axes.labelsize"] = 11
+3. Carga de los datos
+Si tenés todos los CSV dentro de una carpeta:
+
+archivos = glob.glob("ventas/*.csv")
+
+archivos
+Podemos leerlos todos:
+
+dataframes = []
+
+for archivo in archivos:
+    df_temp = pd.read_csv(archivo)
+    
+    # Guardamos el nombre del archivo para identificar el mes
+    df_temp["archivo_origen"] = archivo
+    
+    dataframes.append(df_temp)
+
+df = pd.concat(dataframes, ignore_index=True)
+
+df.head()
+Cantidad de registros
+df.shape
+print(f"Cantidad de filas: {df.shape[0]}")
+print(f"Cantidad de columnas: {df.shape[1]}")
+4. Exploración inicial
+df.info()
+df.head()
+df.tail()
+Estadísticas:
+
+df.describe(include="all")
+Valores nulos:
+
+df.isnull().sum()
+Duplicados:
+
+df.duplicated().sum()
+5. Limpieza de datos
+Primero eliminamos duplicados:
+
+df = df.drop_duplicates()
+Eliminamos filas incompletas:
+
+df = df.dropna()
+Verificamos nuevamente:
+
+df.isnull().sum()
+6. Conversión de tipos
+La fecha debe convertirse a datetime.
+
+df["fecha de pedido"] = pd.to_datetime(
+    df["fecha de pedido"],
+    errors="coerce"
+)
+Convertimos cantidad y precio:
+
+df["cantidad pedida"] = pd.to_numeric(
+    df["cantidad pedida"],
+    errors="coerce"
+)
+
+df["precio unitario"] = pd.to_numeric(
+    df["precio unitario"],
+    errors="coerce"
+)
+Volvemos a eliminar registros que hayan quedado inválidos:
+
+df = df.dropna(
+    subset=[
+        "cantidad pedida",
+        "precio unitario",
+        "fecha de pedido"
+    ]
+)
+7. Crear variable de ventas
+Esta es una de las variables más importantes del análisis.
+
+df["ventas"] = (
+    df["cantidad pedida"] *
+    df["precio unitario"]
+)
+Podemos observar:
+
+df[
+    [
+        "id de pedido",
+        "producto",
+        "cantidad pedida",
+        "precio unitario",
+        "ventas"
+    ]
+].head()
+8. Crear variables temporales
+Vamos a obtener año, mes, día, hora y día de la semana.
+
+df["año"] = df["fecha de pedido"].dt.year
+
+df["mes_numero"] = df["fecha de pedido"].dt.month
+
+df["mes"] = df["fecha de pedido"].dt.month_name()
+
+df["dia"] = df["fecha de pedido"].dt.day
+
+df["hora"] = df["fecha de pedido"].dt.hour
+
+df["dia_semana"] = df["fecha de pedido"].dt.day_name()
+Para trabajar en español:
+
+dias_es = {
+    "Monday": "Lunes",
+    "Tuesday": "Martes",
+    "Wednesday": "Miércoles",
+    "Thursday": "Jueves",
+    "Friday": "Viernes",
+    "Saturday": "Sábado",
+    "Sunday": "Domingo"
+}
+
+df["dia_semana"] = df["dia_semana"].map(dias_es)
+9. Orden correcto de los meses
+Esto es importante porque si hacemos un gráfico directamente, Pandas puede ordenar los meses alfabéticamente.
+
+meses = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December"
+]
+
+df["mes"] = pd.Categorical(
+    df["mes"],
+    categories=meses,
+    ordered=True
+)
+10. Análisis general
+Primero podemos obtener un resumen:
+
+df.describe()
+Y algunos indicadores:
+
+print("Ventas totales:", df["ventas"].sum())
+print("Cantidad de pedidos:", df["id de pedido"].nunique())
+print("Cantidad de productos:", df["producto"].nunique())
+print("Ticket promedio:",
+      df.groupby("id de pedido")["ventas"].sum().mean())
+11. Pregunta 1 — Ventas por mes
+¿Cómo variaron las ventas a lo largo de los meses?
+ventas_mes = (
+    df.groupby("mes", observed=True)["ventas"]
+      .sum()
+      .reset_index()
+)
+
+ventas_mes
+Gráfico:
+
+plt.figure(figsize=(12, 6))
+
+sns.barplot(
+    data=ventas_mes,
+    x="mes",
+    y="ventas",
+    color="steelblue"
+)
+
+plt.title("Ventas totales por mes")
+plt.xlabel("Mes")
+plt.ylabel("Ventas")
+
+plt.xticks(rotation=45)
+
+plt.tight_layout()
+plt.show()
+Evolución mediante línea
+plt.figure(figsize=(12, 6))
+
+sns.lineplot(
+    data=ventas_mes,
+    x="mes",
+    y="ventas",
+    marker="o",
+    linewidth=2.5
+)
+
+plt.title("Evolución de las ventas durante el año")
+plt.xlabel("Mes")
+plt.ylabel("Ventas")
+
+plt.xticks(rotation=45)
+
+plt.tight_layout()
+plt.show()
+¿Cuál fue el mes con mayores ventas?
+mes_max = ventas_mes.loc[
+    ventas_mes["ventas"].idxmax()
+]
+
+mes_min = ventas_mes.loc[
+    ventas_mes["ventas"].idxmin()
+]
+
+print(
+    f"El mes con mayores ventas fue "
+    f"{mes_max['mes']} con ${mes_max['ventas']:,.2f}"
+)
+
+print(
+    f"El mes con menores ventas fue "
+    f"{mes_min['mes']} con ${mes_min['ventas']:,.2f}"
+)
+12. Porcentaje de ventas por mes
+Esto responde mejor a la parte porcentual.
+
+ventas_mes["porcentaje"] = (
+    ventas_mes["ventas"] /
+    ventas_mes["ventas"].sum()
+) * 100
+ventas_mes
+Gráfico:
+
+plt.figure(figsize=(12, 6))
+
+ax = sns.barplot(
+    data=ventas_mes,
+    x="mes",
+    y="porcentaje",
+    color="seagreen"
+)
+
+for container in ax.containers:
+    ax.bar_label(
+        container,
+        fmt="%.1f%%"
+    )
+
+plt.title("Participación porcentual de las ventas por mes")
+plt.xlabel("Mes")
+plt.ylabel("% del total de ventas")
+
+plt.xticks(rotation=45)
+
+plt.tight_layout()
+plt.show()
+13. Pregunta 2 — Ventas por hora
+Primero analizamos cuántas ventas tenemos por hora.
+
+ventas_hora = (
+    df.groupby("hora")["ventas"]
+      .sum()
+      .reset_index()
+)
+plt.figure(figsize=(12, 6))
+
+sns.lineplot(
+    data=ventas_hora,
+    x="hora",
+    y="ventas",
+    marker="o"
+)
+
+plt.title("Ventas según hora del día")
+plt.xlabel("Hora")
+plt.ylabel("Ventas")
+
+plt.xticks(range(0, 24))
+
+plt.tight_layout()
+plt.show()
+¿Cuál es la mejor hora para publicidad?
+hora_max = ventas_hora.loc[
+    ventas_hora["ventas"].idxmax()
+]
+
+print(
+    f"La hora con mayor volumen de ventas es "
+    f"{int(hora_max['hora'])}:00 "
+    f"con ${hora_max['ventas']:,.2f}"
+)
+Interpretación:
+
+### Interpretación
+
+La hora con mayor volumen de ventas puede considerarse un momento estratégico
+para concentrar las acciones publicitarias.
+
+Sin embargo, debe tenerse en cuenta que una correlación entre publicidad y
+ventas no puede establecerse únicamente a partir de estos datos. El horario
+de mayor venta indica el momento de mayor actividad comercial, pero no demuestra
+por sí mismo que mostrar publicidad en ese horario sea la causa del aumento
+de las ventas.
+14. Ventas por hora y mes
+Esta visualización es muy buena para responder:
+
+¿Cómo cambian los patrones de ventas por hora a lo largo del año?
+
+ventas_hora_mes = (
+    df.groupby(["mes", "hora"], observed=True)["ventas"]
+      .sum()
+      .reset_index()
+)
+plt.figure(figsize=(14, 7))
+
+sns.lineplot(
+    data=ventas_hora_mes,
+    x="hora",
+    y="ventas",
+    hue="mes",
+    marker="o"
+)
+
+plt.title("Patrón horario de ventas por mes")
+plt.xlabel("Hora")
+plt.ylabel("Ventas")
+
+plt.xticks(range(0, 24))
+
+plt.legend(
+    bbox_to_anchor=(1.02, 1),
+    loc="upper left"
+)
+
+plt.tight_layout()
+plt.show()
+15. Heatmap — Mes vs hora
+Este es probablemente uno de los gráficos más interesantes del laboratorio.
+
+tabla_hora_mes = df.pivot_table(
+    index="mes",
+    columns="hora",
+    values="ventas",
+    aggfunc="sum",
+    observed=True
+)
+plt.figure(figsize=(16, 8))
+
+sns.heatmap(
+    tabla_hora_mes,
+    cmap="YlOrRd",
+    linewidths=0.5
+)
+
+plt.title("Mapa de calor de ventas por mes y hora")
+plt.xlabel("Hora")
+plt.ylabel("Mes")
+
+plt.tight_layout()
+plt.show()
+Te permite detectar visualmente horarios de mayor actividad en cada mes.
+
+16. Pregunta 3 — Distribución de ventas por ciudad
+Acá entra la información que ustedes obtuvieron de población.
+
+Primero debemos extraer la ciudad de direccion de envio.
+
+Dependiendo del formato de tu dirección, esto puede cambiar.
+
+Por ejemplo, si la dirección es:
+
+123 Main St, Boston, MA 02110
+podríamos necesitar una extracción específica.
+
+Si ya tenés una columna ciudad, mejor:
+
+df["ciudad"].value_counts().head(20)
+17. Ventas por ciudad
+ventas_ciudad = (
+    df.groupby("ciudad")["ventas"]
+      .sum()
+      .sort_values(ascending=False)
+      .reset_index()
+)
+Top 15:
+
+top_ciudades = ventas_ciudad.head(15)
+
+plt.figure(figsize=(12, 7))
+
+sns.barplot(
+    data=top_ciudades,
+    x="ventas",
+    y="ciudad",
+    color="royalblue"
+)
+
+plt.title("Top 15 ciudades por ventas")
+plt.xlabel("Ventas")
+plt.ylabel("Ciudad")
+
+plt.tight_layout()
+plt.show()
+18. Porcentaje de ventas por ciudad
+ventas_ciudad["porcentaje_ventas"] = (
+    ventas_ciudad["ventas"] /
+    ventas_ciudad["ventas"].sum()
+) * 100
+top_ciudades = ventas_ciudad.head(15).copy()
+
+plt.figure(figsize=(12, 7))
+
+ax = sns.barplot(
+    data=top_ciudades,
+    x="porcentaje_ventas",
+    y="ciudad",
+    color="darkorange"
+)
+
+for container in ax.containers:
+    ax.bar_label(
+        container,
+        fmt="%.1f%%"
+    )
+
+plt.title("Participación porcentual de ventas por ciudad")
+plt.xlabel("% del total de ventas")
+plt.ylabel("Ciudad")
+
+plt.tight_layout()
+plt.show()
+19. ⭐ Ventas por habitante
+Acá podemos hacer algo más interesante que simplemente ordenar ciudades por ventas.
+
+Si después del merge tenemos:
+
+ciudad
+poblacion
+podemos calcular:
+
+ventas_poblacion = (
+    df.groupby("ciudad")["ventas"]
+      .sum()
+      .reset_index()
+)
+Y combinarlo con la población:
+
+ventas_poblacion = ventas_poblacion.merge(
+    poblacion_df,
+    on="ciudad",
+    how="left"
+)
+Por ejemplo, si la columna se llama habitantes:
+
+ventas_poblacion["ventas_por_habitante"] = (
+    ventas_poblacion["ventas"] /
+    ventas_poblacion["habitantes"]
+)
+20. Gráfico de ventas por habitante
+top_rendimiento = (
+    ventas_poblacion
+    .sort_values(
+        "ventas_por_habitante",
+        ascending=False
+    )
+    .head(15)
+)
+plt.figure(figsize=(12, 7))
+
+sns.barplot(
+    data=top_rendimiento,
+    x="ventas_por_habitante",
+    y="ciudad",
+    color="purple"
+)
+
+plt.title("Ciudades con mayor nivel de ventas por habitante")
+plt.xlabel("Ventas por habitante")
+plt.ylabel("Ciudad")
+
+plt.tight_layout()
+plt.show()
+Esto permite una conclusión mucho más interesante
+Una ciudad puede tener muchas ventas simplemente porque tiene muchos habitantes.
+
+Con ventas_por_habitante podemos identificar ciudades donde existe una mayor intensidad comercial relativa a su población.
+
+21. Relación entre población y ventas
+plt.figure(figsize=(10, 7))
+
+sns.scatterplot(
+    data=ventas_poblacion,
+    x="habitantes",
+    y="ventas",
+    size="ventas_por_habitante",
+    hue="ventas_por_habitante",
+    palette="viridis",
+    sizes=(50, 800)
+)
+
+plt.title("Relación entre población y ventas")
+plt.xlabel("Habitantes")
+plt.ylabel("Ventas")
+
+plt.tight_layout()
+plt.show()
+Podemos calcular correlación:
+
+correlacion = ventas_poblacion[
+    ["habitantes", "ventas"]
+].corr()
+
+correlacion
+Y obtener específicamente:
+
+r = ventas_poblacion[
+    ["habitantes", "ventas"]
+].corr().loc[
+    "habitantes",
+    "ventas"
+]
+
+print(f"Correlación entre población y ventas: {r:.3f}")
+22. Pregunta 4 — Producto más vendido
+Tenemos que diferenciar entre:
+
+producto con mayor cantidad vendida
+producto que genera mayor facturación
+Primero cantidad:
+
+ventas_producto = (
+    df.groupby("producto")["cantidad pedida"]
+      .sum()
+      .sort_values(ascending=False)
+      .reset_index()
+)
+top_productos = ventas_producto.head(15)
+
+plt.figure(figsize=(12, 7))
+
+sns.barplot(
+    data=top_productos,
+    x="cantidad pedida",
+    y="producto",
+    color="steelblue"
+)
+
+plt.title("Productos más vendidos por cantidad")
+plt.xlabel("Cantidad vendida")
+plt.ylabel("Producto")
+
+plt.tight_layout()
+plt.show()
+23. Producto que genera más ingresos
+ingresos_producto = (
+    df.groupby("producto")["ventas"]
+      .sum()
+      .sort_values(ascending=False)
+      .reset_index()
+)
+top_ingresos = ingresos_producto.head(15)
+
+plt.figure(figsize=(12, 7))
+
+sns.barplot(
+    data=top_ingresos,
+    x="ventas",
+    y="producto",
+    color="green"
+)
+
+plt.title("Productos que generan mayores ingresos")
+plt.xlabel("Ingresos")
+plt.ylabel("Producto")
+
+plt.tight_layout()
+plt.show()
+Esto es importante porque el producto más vendido en unidades no necesariamente es el que más dinero genera.
+
+24. Producto más vendido por mes
+producto_mes = (
+    df.groupby(
+        ["mes", "producto"],
+        observed=True
+    )["cantidad pedida"]
+    .sum()
+    .reset_index()
+)
+producto_mes_max = (
+    producto_mes
+    .sort_values("cantidad pedida", ascending=False)
+    .groupby("mes", observed=True)
+    .head(1)
+)
+producto_mes_max
+Podemos visualizarlo:
+
+plt.figure(figsize=(14, 7))
+
+sns.barplot(
+    data=producto_mes_max,
+    x="mes",
+    y="cantidad pedida",
+    hue="producto",
+    dodge=False
+)
+
+plt.title("Producto más vendido por mes")
+plt.xlabel("Mes")
+plt.ylabel("Cantidad vendida")
+
+plt.xticks(rotation=45)
+
+plt.legend(
+    bbox_to_anchor=(1.02, 1),
+    loc="upper left"
+)
+
+plt.tight_layout()
+plt.show()
+25. Pregunta 5 — Ventas por día de la semana
+orden_dias = [
+    "Lunes",
+    "Martes",
+    "Miércoles",
+    "Jueves",
+    "Viernes",
+    "Sábado",
+    "Domingo"
+]
+
+ventas_dia = (
+    df.groupby("dia_semana")["ventas"]
+      .sum()
+      .reindex(orden_dias)
+      .reset_index()
+)
+plt.figure(figsize=(10, 6))
+
+sns.barplot(
+    data=ventas_dia,
+    x="dia_semana",
+    y="ventas",
+    color="teal"
+)
+
+plt.title("Ventas según día de la semana")
+plt.xlabel("Día")
+plt.ylabel("Ventas")
+
+plt.xticks(rotation=30)
+
+plt.tight_layout()
+plt.show()
+26. Cantidad de pedidos por día
+Es interesante comparar facturación contra cantidad de pedidos.
+
+pedidos_dia = (
+    df.groupby("dia_semana")["id de pedido"]
+      .nunique()
+      .reindex(orden_dias)
+      .reset_index()
+)
+plt.figure(figsize=(10, 6))
+
+sns.barplot(
+    data=pedidos_dia,
+    x="dia_semana",
+    y="id de pedido",
+    color="coral"
+)
+
+plt.title("Cantidad de pedidos por día de la semana")
+plt.xlabel("Día")
+plt.ylabel("Cantidad de pedidos")
+
+plt.tight_layout()
+plt.show()
+27. Ventas por día del mes
+ventas_dia_mes = (
+    df.groupby("dia")["ventas"]
+      .sum()
+      .reset_index()
+)
+plt.figure(figsize=(12, 6))
+
+sns.lineplot(
+    data=ventas_dia_mes,
+    x="dia",
+    y="ventas",
+    marker="o"
+)
+
+plt.title("Ventas según día del mes")
+plt.xlabel("Día del mes")
+plt.ylabel("Ventas")
+
+plt.xticks(range(1, 32))
+
+plt.tight_layout()
+plt.show()
+28. ⭐ Productos comprados juntos
+Esta parte es un poco más avanzada.
+
+Primero identificamos qué productos pertenecen a cada pedido.
+
+productos_por_pedido = (
+    df.groupby("id de pedido")["producto"]
+      .apply(lambda x: list(set(x)))
+)
+Ahora generamos todos los pares posibles:
+
+pares = []
+
+for productos in productos_por_pedido:
+    if len(productos) >= 2:
+        pares.extend(combinations(sorted(productos), 2))
+Convertimos en DataFrame:
+
+pares_df = pd.DataFrame(
+    pares,
+    columns=["producto_1", "producto_2"]
+)
+Contamos las combinaciones:
+
+pares_frecuentes = (
+    pares_df
+    .value_counts()
+    .reset_index(name="frecuencia")
+    .sort_values(
+        "frecuencia",
+        ascending=False
+    )
+)
+Top 20:
+
+pares_frecuentes.head(20)
+29. Heatmap de productos comprados juntos
+Creamos una matriz:
+
+matriz_pares = pares_df.pivot_table(
+    index="producto_1",
+    columns="producto_2",
+    aggfunc="size",
+    fill_value=0
+)
+Heatmap:
+
+plt.figure(figsize=(14, 10))
+
+sns.heatmap(
+    matriz_pares,
+    cmap="YlOrRd"
+)
+
+plt.title("Productos comprados conjuntamente")
+plt.xlabel("Producto")
+plt.ylabel("Producto")
+
+plt.tight_layout()
+plt.show()
+Nota: si tenés cientos de productos, el heatmap completo puede ser ilegible. En ese caso conviene tomar los 15 o 20 productos con mayor frecuencia.
+
+30. Pregunta 6 — Eventos especiales
+Para analizar eventos necesitamos definir las fechas relevantes.
+
+Por ejemplo:
+
+eventos = {
+    "Navidad": "2019-12-25",
+    "Black Friday": "2019-11-29",
+    "Año Nuevo": "2020-01-01"
+}
+Pero hay que adaptar estas fechas al año real de tus datos.
+
+Podemos analizar ventas alrededor de cada evento.
+
+Por ejemplo:
+
+df["fecha"] = df["fecha de pedido"].dt.date
+Para un evento:
+
+fecha_evento = pd.Timestamp("2019-12-25")
+
+periodo_evento = df[
+    (df["fecha de pedido"] >= fecha_evento - pd.Timedelta(days=7)) &
+    (df["fecha de pedido"] <= fecha_evento + pd.Timedelta(days=7))
+]
+Ventas por día:
+
+ventas_evento = (
+    periodo_evento
+    .groupby(
+        periodo_evento["fecha de pedido"].dt.date
+    )["ventas"]
+    .sum()
+    .reset_index()
+)
+plt.figure(figsize=(14, 6))
+
+sns.lineplot(
+    data=ventas_evento,
+    x="fecha de pedido",
+    y="ventas",
+    marker="o"
+)
+
+plt.axvline(
+    fecha_evento.date(),
+    color="red",
+    linestyle="--",
+    label="Evento"
+)
+
+plt.title("Comportamiento de las ventas alrededor del evento")
+plt.xlabel("Fecha")
+plt.ylabel("Ventas")
+
+plt.legend()
+
+plt.xticks(rotation=45)
+
+plt.tight_layout()
+plt.show()
+31. Pregunta adicional ⭐
+Yo elegiría esta como pregunta adicional:
+
+¿Qué ciudades presentan un nivel de ventas superior o inferior al esperado considerando su población?
+
+Es una pregunta muy buena porque aprovecha el dato adicional que ustedes consiguieron.
+
+Podemos calcular una medida simple:
+
+ventas_poblacion["ventas_por_habitante"] = (
+    ventas_poblacion["ventas"] /
+    ventas_poblacion["habitantes"]
+)
+Y ordenar:
+
+ventas_poblacion.sort_values(
+    "ventas_por_habitante",
+    ascending=False
+).head(10)
+Y las de menor rendimiento:
+
+ventas_poblacion.sort_values(
+    "ventas_por_habitante",
+    ascending=True
+).head(10)

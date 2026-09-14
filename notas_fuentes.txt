@@ -38,7 +38,18 @@
  10. Colores
  https://es.matplotlib.net/stable/gallery/color/named_colors.html
 
+ 11. Horas con más ventas
 
- Preguntas:
- 1 ✅ en meses
- 
+ https://www.surebright.com/research/align-ad-spend-with-customer-purchase-timing-learnings-from-1-1-million-retail-orders?utm_source=copilot.com
+
+
+https://adscale.com/blog/best-time-to-run-ecommerce-ads/?utm_source=copilot.com
+
+
+Media de ventas: pero puede presentar problemas si alguien compra mucho
+Mediana: para saber el cliente tipo: El 50% de tus pedidos facturaron menos que este valor y el 50% facturó más.
+
+paleta colores https://plotly.com/python/builtin-colorscales/
+
+como crear tu buyer person https://www.cyberclick.es/numerical-blog/data-science-como-crear-tu-buyer-persona-con-el-analisis-de-datos
+
