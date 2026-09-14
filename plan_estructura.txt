@@ -1,0 +1,16 @@
+1. Grupo
+2. Importación de librerías
+3. Carga de datos
+4. Exploración inicial
+5. Limpieza
+6. Preparación
+7. Creación de variables
+8. Análisis mensual
+0. Análisis horario
+10. Análisis por día de semana
+12. Análisis geográfico
+13. Análisis de productos
+14. Análisis de cesta
+15. Eventos especiales
+16. Conclusiones
+17. Limitaciones
